@@ -1,0 +1,38 @@
+{
+  "name": "defer-queue-js",
+  "version": "1.0.0",
+  "description": "Tiny defer queue utility for scheduling sync/async cleanup callbacks in JS/TS",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "index.ts",
+  "files": [
+    "dist",
+    "index.ts"
+  ],
+  "type": "module",
+  "keywords": [
+    "defer",
+    "queue",
+    "cleanup",
+    "teardown",
+    "typescript",
+    "javascript"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/almoatamed/defer-queue-js.git"
+  },
+  "author": "Salem Elmotamed s.elmotamed96@gmail.com",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+
+}
