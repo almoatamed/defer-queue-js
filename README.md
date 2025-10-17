@@ -121,35 +121,6 @@ q.appendAsync(() => {
 
 Mixing both is supported: async callbacks run in parallel and the sync queue is processed (in order) as part of the overall `defer()` call.
 
-## Known issue and suggested fix
-
-While working with the source it is worth noting a subtle bug in `index.ts`:
-
-- In the sync processing loop the code does `try { await cb; }` which awaits the callback function value itself, not the result of calling the callback. That means sync callbacks are never executed; instead the code awaits the function object (a no-op) and the intended cleanup won't run.
-
-Suggested fix: call the callback and await its return value (so it supports both sync and async callbacks). Replace `await cb;` with `await cb();` inside the sync loop. Example patch:
-
-```ts
-while (this.syncList.length) {
-	const cb = this.syncList.shift()!;
-	try {
-		await cb();
-	} catch (error) {
-		console.error(this.name, 'Failed to run sync deferred callback', error);
-	}
-}
-```
-
-This change keeps the behavior consistent: sync callbacks that return void will run immediately; if a sync callback returns a Promise it will be awaited.
-
-## Tests & suggestions
-
-- Minimal tests to add:
-	- appendSync + appendAsync both run when `defer()` is called (happy path)
-	- errors thrown in async and sync callbacks are caught and logged (verify `defer()` resolves)
-	- order: sync callbacks run in FIFO order
-
-- Consider renaming `appendSync` to `append` and `appendAsync` to `appendParallel` or similar if you want clearer semantics.
 
 ## License
 
