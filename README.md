@@ -73,6 +73,54 @@ await queue.defer();
 
 - Error handling: `defer()` traps errors from both kinds of callbacks and logs them. It does not rethrow, so callers should not expect an exception even if callbacks fail.
 
+### When to use sync vs async
+
+Use `appendSync` when the callbacks have ordering dependencies — for example resources that must be torn down in the opposite order they were started. A typical pattern:
+
+- open DB connection
+- start HTTP server (which depends on DB)
+
+On shutdown you want to stop accepting requests before you close the DB. To express that ordering use the sync queue so callbacks run in FIFO order and are awaited one-by-one:
+
+```ts
+import DeferQueue from 'defer-queue-js';
+
+const q = new DeferQueue('server-shutdown');
+
+// start DB first
+startDatabase();
+q.appendSync(async () => {
+	// on shutdown: close DB after server is stopped
+	await db.close();
+});
+
+// then start server
+startServer();
+q.appendSync(async () => {
+	// on shutdown: stop server first
+	await server.stop();
+});
+
+// later on shutdown
+await q.defer();
+```
+
+Because `appendSync` callbacks are shifted and awaited sequentially, you can rely on the order to express dependencies.
+
+Use `appendAsync` for completely independent work that can run in parallel and doesn't depend on ordering — e.g. sending telemetry, clearing caches, or deleting temporary files. These run concurrently when `defer()` is called.
+
+```ts
+q.appendAsync(async () => {
+	await sendTelemetry('shutdown');
+});
+
+q.appendAsync(() => {
+	cleanupTempFiles();
+});
+```
+
+Mixing both is supported: async callbacks run in parallel and the sync queue is processed (in order) as part of the overall `defer()` call.
+
 ## Known issue and suggested fix
 
 While working with the source it is worth noting a subtle bug in `index.ts`:
